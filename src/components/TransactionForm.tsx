@@ -30,6 +30,7 @@ export default function TransactionForm({
     const lastMatch = transactions.find((t) => t.product === name);
     if (lastMatch) {
       form.setUnitPrice(String(lastMatch.price));
+      form.setUnit(lastMatch.unit);
     }
   }
 
@@ -94,8 +95,8 @@ export default function TransactionForm({
 
   const title = isIncome ? 'Registrar Ingreso' : 'Registrar Egreso';
   const subtitle = isIncome
-    ? 'Añadí un nuevo lote de mercadería al inventario.'
-    : 'Añade una nueva compra o gasto al sistema.';
+    ? 'Registrá una venta realizada.'
+    : 'Registrá una compra o gasto realizado.';
   const buttonLabel = isIncome ? 'Guardar Ingreso' : 'Guardar Egreso';
 
   return (
