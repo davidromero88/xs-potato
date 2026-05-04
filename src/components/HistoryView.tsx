@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { ArrowUp, ArrowDown, Download, Inbox } from 'lucide-react';
+import { ArrowUp, ArrowDown, Download, Inbox, Trash2 } from 'lucide-react';
 import type { Transaction } from '../types/types';
 import InlineEdit from './InlineEdit';
 import { exportToCsv } from '../utils/exportCsv';
@@ -13,6 +13,7 @@ type HistoryViewProps = {
     id: string,
     updates: Partial<Omit<Transaction, 'id' | 'date'>>,
   ) => void;
+  onDeleteTransaction: (id: string) => void;
 };
 
 function formatDate(iso: string): string {
@@ -63,6 +64,7 @@ const FILTER_OPTIONS: { id: TimeFilter; label: string }[] = [
 export default function HistoryView({
   transactions,
   onUpdateTransaction,
+  onDeleteTransaction,
 }: HistoryViewProps) {
   const [activeFilter, setActiveFilter] = useState<TimeFilter>('day');
 
@@ -109,6 +111,13 @@ export default function HistoryView({
           ? 'mes'
           : 'anio';
     exportToCsv(filtered, `xspotato_${filterLabel}.csv`);
+  }
+
+  function handleDelete(id: string) {
+    const confirmed = window.confirm(
+      '¿Estás seguro de que querés eliminar este registro? Esta acción no se puede deshacer.',
+    );
+    if (confirmed) onDeleteTransaction(id);
   }
 
   return (
@@ -203,6 +212,8 @@ export default function HistoryView({
                 <th className="py-4 px-6 font-body text-base font-semibold text-on-surface-variant border-b border-surface-container">
                   Total
                 </th>
+                <th className="py-4 px-6 font-body text-base font-semibold text-on-surface-variant border-b border-surface-container w-16">
+                </th>
               </tr>
             </thead>
             <tbody className="font-body text-base text-on-surface">
@@ -254,6 +265,15 @@ export default function HistoryView({
                     >
                       {isExpense ? '- ' : ''}$ {formatPriceShort(total)}
                     </td>
+                    <td className="py-4 px-6">
+                      <button
+                        onClick={() => handleDelete(t.id)}
+                        className="p-2 rounded-lg text-on-surface-variant hover:text-error hover:bg-error-container/20 transition-colors"
+                        aria-label="Eliminar registro"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </td>
                   </tr>
                 );
               })}
@@ -271,60 +291,69 @@ export default function HistoryView({
             return (
               <div
                 key={t.id}
-                className={`bg-surface-container-lowest p-4 rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.05)] border border-surface-container-low flex justify-between items-center ${
+                className={`bg-surface-container-lowest p-4 rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.05)] border border-surface-container-low relative ${
                   isExpense ? 'bg-error-container/5' : ''
                 }`}
               >
-                <div className="flex items-center gap-4">
-                  <div
-                    className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
-                      isExpense
-                        ? 'bg-error-container/30'
-                        : 'bg-primary-container/10'
+                <button
+                  onClick={() => handleDelete(t.id)}
+                  className="absolute top-3 right-3 p-2 rounded-lg text-on-surface-variant hover:text-error hover:bg-error-container/20 transition-colors"
+                  aria-label="Eliminar registro"
+                >
+                  <Trash2 size={16} />
+                </button>
+                <div className="flex justify-between items-center pr-8">
+                  <div className="flex items-center gap-4">
+                    <div
+                      className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
+                        isExpense
+                          ? 'bg-error-container/30'
+                          : 'bg-primary-container/10'
+                      }`}
+                    >
+                      {isExpense ? (
+                        <ArrowDown className="text-error" size={20} />
+                      ) : (
+                        <ArrowUp
+                          className="text-primary-container"
+                          size={20}
+                        />
+                      )}
+                    </div>
+                    <div className="flex flex-col gap-0.5">
+                      <InlineEdit
+                        value={t.product}
+                        onCommit={(v) => handleProductEdit(t.id, v)}
+                        className="font-body text-base font-semibold text-on-surface"
+                      />
+                      <span className="font-body text-sm text-on-surface-variant">
+                        <InlineEdit
+                          value={`${t.quantity}`}
+                          onCommit={(v) => handleQuantityEdit(t.id, v)}
+                          className="font-body text-sm text-on-surface-variant"
+                        />
+                        {' '}
+                        {t.unit.toLowerCase()} × $
+                        {' '}
+                        <InlineEdit
+                          value={`${formatPriceShort(t.price)}`}
+                          onCommit={(v) => handlePriceEdit(t.id, v)}
+                          className="font-body text-sm text-on-surface-variant"
+                        />
+                      </span>
+                      <span className="font-body text-xs text-on-surface-variant">
+                        {formatDate(t.date)}
+                      </span>
+                    </div>
+                  </div>
+                  <span
+                    className={`font-display text-xl font-bold shrink-0 ${
+                      isExpense ? 'text-error' : 'text-on-surface'
                     }`}
                   >
-                    {isExpense ? (
-                      <ArrowDown className="text-error" size={20} />
-                    ) : (
-                      <ArrowUp
-                        className="text-primary-container"
-                        size={20}
-                      />
-                    )}
-                  </div>
-                  <div className="flex flex-col gap-0.5">
-                    <InlineEdit
-                      value={t.product}
-                      onCommit={(v) => handleProductEdit(t.id, v)}
-                      className="font-body text-base font-semibold text-on-surface"
-                    />
-                    <span className="font-body text-sm text-on-surface-variant">
-                      <InlineEdit
-                        value={`${t.quantity}`}
-                        onCommit={(v) => handleQuantityEdit(t.id, v)}
-                        className="font-body text-sm text-on-surface-variant"
-                      />
-                      {' '}
-                      {t.unit.toLowerCase()} × $
-                      {' '}
-                      <InlineEdit
-                        value={`${formatPriceShort(t.price)}`}
-                        onCommit={(v) => handlePriceEdit(t.id, v)}
-                        className="font-body text-sm text-on-surface-variant"
-                      />
-                    </span>
-                    <span className="font-body text-xs text-on-surface-variant">
-                      {formatDate(t.date)}
-                    </span>
-                  </div>
+                    {isExpense ? '- ' : ''}$ {formatPriceShort(total)}
+                  </span>
                 </div>
-                <span
-                  className={`font-display text-xl font-bold shrink-0 ${
-                    isExpense ? 'text-error' : 'text-on-surface'
-                  }`}
-                >
-                  {isExpense ? '- ' : ''}$ {formatPriceShort(total)}
-                </span>
               </div>
             );
           })}

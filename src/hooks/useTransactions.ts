@@ -74,10 +74,20 @@ export function useTransactions() {
     [persist],
   );
 
+  const deleteTransactionById = useCallback(
+    (id: string) => {
+      const current = loadTransactions();
+      const next = current.filter((t) => t.id !== id);
+      persist(next);
+    },
+    [persist],
+  );
+
   return {
     transactions,
     addTransaction,
     updateTransactionById,
     bulkUpdateProductName,
+    deleteTransactionById,
   } as const;
 }

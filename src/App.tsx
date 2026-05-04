@@ -14,6 +14,7 @@ function App() {
     addTransaction,
     updateTransactionById,
     bulkUpdateProductName,
+    deleteTransactionById,
   } = useTransactions();
   const productSuggestions = getUniqueProducts(transactions);
 
@@ -43,6 +44,7 @@ function App() {
         <HistoryView
           transactions={transactions}
           onUpdateTransaction={updateTransactionById}
+          onDeleteTransaction={deleteTransactionById}
         />
       )}
 
