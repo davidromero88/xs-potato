@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { ShoppingBag, PlusCircle, CheckCircle, Pencil } from 'lucide-react';
 import type { Transaction } from '../types/types';
 import { useProductAutocomplete } from '../hooks/useProductAutocomplete';
@@ -25,13 +26,36 @@ export default function TransactionForm({
   const isIncome = variant === 'ingreso';
 
   const form = useTransactionForm({ variant });
+  const [priceWarningText, setPriceWarningText] = useState('');
 
   function handleSuggestionSelected(name: string) {
-    const lastMatch = transactions.find((t) => t.product === name);
-    if (lastMatch) {
-      form.setUnitPrice(String(lastMatch.price));
-      form.setUnit(lastMatch.unit);
+    const sameTypeMatch = transactions.find(
+      (t) => t.product === name && t.type === variant,
+    );
+
+    if (sameTypeMatch) {
+      form.setUnitPrice(String(sameTypeMatch.price));
+      form.setUnit(sameTypeMatch.unit);
+      setPriceWarningText('');
+      return;
     }
+
+    const oppositeTypeMatch = transactions.find(
+      (t) => t.product === name && t.type !== variant,
+    );
+
+    if (oppositeTypeMatch) {
+      form.setUnitPrice(String(oppositeTypeMatch.price));
+      form.setUnit(oppositeTypeMatch.unit);
+      const foundTypeLabel =
+        oppositeTypeMatch.type === 'ingreso' ? 'Ingreso' : 'Egreso';
+      setPriceWarningText(
+        `Atención: Este es el precio del último ${foundTypeLabel}. Revisá el valor.`,
+      );
+      return;
+    }
+
+    setPriceWarningText('');
   }
 
   const { state: ac, refs } = useProductAutocomplete({
@@ -52,6 +76,7 @@ export default function TransactionForm({
     onSave(data);
     form.resetFields();
     ac.resetAutocomplete();
+    setPriceWarningText('');
   }
 
   function handleCancelRename() {
@@ -64,6 +89,7 @@ export default function TransactionForm({
     ac.clearPendingRename();
     form.resetFields();
     ac.resetAutocomplete();
+    setPriceWarningText('');
   }
 
   function handleUpdateAll() {
@@ -73,6 +99,7 @@ export default function TransactionForm({
     ac.clearPendingRename();
     form.resetFields();
     ac.resetAutocomplete();
+    setPriceWarningText('');
   }
 
   // Theme tokens
@@ -207,8 +234,13 @@ export default function TransactionForm({
           {/* Unit Price */}
           <div className="flex flex-col gap-2">
             <label className="font-body text-base font-semibold text-on-surface-variant">
-              Precio Unitario
+              Precio por {form.unit}
             </label>
+            {priceWarningText && (
+              <span className="font-body text-xs text-amber-600">
+                {priceWarningText}
+              </span>
+            )}
             <div className="relative flex items-center">
               <span className="absolute left-4 font-body text-lg text-on-surface-variant">
                 $
@@ -219,7 +251,10 @@ export default function TransactionForm({
                 min="0"
                 step="1"
                 value={form.unitPrice}
-                onChange={(e) => form.setUnitPrice(e.target.value)}
+                onChange={(e) => {
+                  form.setUnitPrice(e.target.value);
+                  setPriceWarningText('');
+                }}
                 className={`w-full h-14 pl-10 pr-4 rounded-xl bg-surface-container-low border-none font-body text-lg text-on-surface ${accentRing} focus:ring-2 transition-all outline-none`}
               />
             </div>
